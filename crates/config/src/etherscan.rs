@@ -260,13 +260,23 @@ impl ResolvedEtherscanConfig {
     /// Creates a new instance using the api key and chain
     pub fn create(api_key: impl Into<String>, chain: impl Into<Chain>) -> Option<Self> {
         let chain = chain.into();
-        let (api_url, browser_url) = chain.etherscan_urls()?;
-        Some(Self {
-            api_url: api_url.to_string(),
-            browser_url: Some(browser_url.to_string()),
-            key: api_key.into(),
-            chain: Some(chain),
-        })
+        if let Some((api_url, browser_url)) = chain.etherscan_urls() {
+            Some(Self {
+                api_url: api_url.to_string(),
+                browser_url: Some(browser_url.to_string()),
+                key: api_key.into(),
+                chain: Some(chain),
+            })
+        } else if chain.id() == 1329 {
+            Some(Self {
+                api_url: "https://seitrace.com/pacific-1/api".to_string(),
+                browser_url: Some("https://seitrace.com/pacific-1".to_string()),
+                key: api_key.into(),
+                chain: Some(chain),
+            })
+        } else {
+            None
+        }
     }
 
     /// Sets the chain value and consumes the type

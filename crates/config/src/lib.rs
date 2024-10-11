@@ -1263,6 +1263,8 @@ impl Config {
         chain: Option<Chain>,
     ) -> Result<Option<ResolvedEtherscanConfig>, EtherscanConfigError> {
         if let Some(maybe_alias) = self.etherscan_api_key.as_ref().or(self.eth_rpc_url.as_ref()) {
+            println!("maybe_alias: {}", maybe_alias);
+            println!("etherscan: {:?}", self.etherscan);
             if self.etherscan.contains_key(maybe_alias) {
                 return self.etherscan.clone().resolved().remove(maybe_alias).transpose();
             }
@@ -1275,15 +1277,23 @@ impl Config {
         {
             match (res, self.etherscan_api_key.as_ref()) {
                 (Ok(mut config), Some(key)) => {
+                    println!("find_chain config with key: {:?}", config);
                     // we update the key, because if an etherscan_api_key is set, it should take
                     // precedence over the entry, since this is usually set via env var or CLI args.
                     config.key.clone_from(key);
                     return Ok(Some(config));
                 }
-                (Ok(config), None) => return Ok(Some(config)),
-                (Err(err), None) => return Err(err),
+                (Ok(config), None) => {
+                    println!("find_chain config without key: {:?}", config);
+                    return Ok(Some(config));
+                }
+                (Err(err), None) => {
+                    println!("find_chain error: {:?}", err);
+                    return Err(err);
+                }
                 (Err(_), Some(_)) => {
                     // use the etherscan key as fallback
+                    println!("find_chain fallback to key");
                 }
             }
         }
@@ -1291,6 +1301,9 @@ impl Config {
         // etherscan fallback via API key
         if let Some(key) = self.etherscan_api_key.as_ref() {
             let chain = chain.or(self.chain).unwrap_or_default();
+            println!("find_chain fallback to key: {:?}", key);
+            println!("find_chain fallback to chain: {:?}", chain);
+            println!("find_chain fallback to create: {:?}", ResolvedEtherscanConfig::create(key, chain));
             return Ok(ResolvedEtherscanConfig::create(key, chain));
         }
 
